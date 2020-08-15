@@ -1,0 +1,7 @@
+# Default ignored files
+/Player Mention Addon.iws
+
+# Project exclude paths
+/.gradle/
+/build/
+/out/

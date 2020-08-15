@@ -1,0 +1,10 @@
+{
+  "uuid": "%uuid%",
+  "name": "Mention",
+  "mainClass": "me.condolence.PlayerMentionAddon",
+  "description": "An addon which highlights your name and plays a sound when a player says your name in chat.\nSetting command: /mention\nSupported servers by default:\n- The Hive\n- Hypixel\n- GommeHD\n- ROXBOT",
+  "version": 1,
+  "author": "Condolence",
+  "category": 2,
+  "icon": "https://i.imgur.com/843MxoW.png"
+}
