@@ -23,11 +23,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Listener {
-    private final LabyModAPI labyModAPI;
+    private final LabyModAPI labyModAPI = PlayerMentionAddon.getLabyAPI();
     private final ConfigHandler configHandler  = PlayerMentionAddon.getConfigHandler();
 
     private final MentionCommand mentionCommand;
-    private final CommandSender commandSender;
 
     // Chat patterns
     private String currentServerIP;
@@ -36,12 +35,7 @@ public class Listener {
     private final Pattern commandPattern = Pattern.compile("(?:/(?<c>\\w+)) ?(?<a>.*)?");
     private final Pattern formatPattern = Pattern.compile("\u00a7[\\dabcdefklmnor]", Pattern.DOTALL);
 
-    public Listener(PlayerMentionAddon addon) {
-        labyModAPI = addon.getApi();
-
-        mentionCommand = new MentionCommand();
-        commandSender = new CommandSender(labyModAPI);
-    }
+    public Listener() { mentionCommand = new MentionCommand(); }
 
     // Method to get all occurrences of a given word/string in a string
     private List<Integer> findWord(String textString, String word) {
@@ -117,6 +111,11 @@ public class Listener {
 
         // MessageSend/MessageModify Events
         eventManager.register((MessageSendEvent) message -> {
+            Debug.log("FORGE: " + PlayerMentionAddon.isOnForge());
+            // Forge's command registry will handle this instead if the client is a forge client
+            if (PlayerMentionAddon.isOnForge()) { return false; }
+
+            // Check if config exists and that the addon is enabled
             if(configHandler.getMainConfig() == null) { return false; }
             if(!configHandler.getMainConfig().isEnabled()) { return false; }
 
@@ -150,7 +149,7 @@ public class Listener {
 
                 if (!commandFound) { return false; }
 
-                mentionCommand.processCommand(commandSender, commandArgs);
+                mentionCommand.processCommand(commandArgs);
 
                 return true;
             }
