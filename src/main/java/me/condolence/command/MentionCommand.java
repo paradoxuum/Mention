@@ -9,6 +9,7 @@ import java.util.*;
 public class MentionCommand {
     final String commandUsage;
     final ConfigHandler configHandler = PlayerMentionAddon.getConfigHandler();
+    final CommandSender commandSender;
 
     public MentionCommand() {
         // Add all split type options to be used in the command usage string
@@ -29,13 +30,15 @@ public class MentionCommand {
                 "   /mention remove <ip>\n" +
                 "\u00a73The IP argument should be the IP of a server\n\n" +
                 splitTypesBuilder.toString();
+
+        commandSender = new CommandSender();
     }
 
     public List<String> getAliases() {
         return Arrays.asList("mention", "mention_addon");
     }
 
-    public void processCommand(CommandSender sender, String[] args) {
+    public void processCommand(String[] args) {
         final String INVALID_COMMAND_USAGE = "\u00a7cInvalid command usage! Use /mention to list all commands.";
         final HashMap<String, List<String>> splitTypes = configHandler.getMainConfig().getSplitTypes();
 
@@ -43,7 +46,7 @@ public class MentionCommand {
 
         switch(args.length) {
             case 0:
-                sender.sendMessage(commandUsage);
+                commandSender.sendMessage(commandUsage);
                 
                 break;
             case 1:
@@ -59,9 +62,9 @@ public class MentionCommand {
                                 .append("\u00a7r\n");
                     }
 
-                    sender.sendMessage(listStringBuilder.toString());
+                    commandSender.sendMessage(listStringBuilder.toString());
                 } else {
-                    sender.sendMessage(INVALID_COMMAND_USAGE);
+                    commandSender.sendMessage(INVALID_COMMAND_USAGE);
                 }
 
                 break;
@@ -70,7 +73,7 @@ public class MentionCommand {
                     for (SplitType type : SplitType.values()) {
                         for (String defaultIP : type.getDefaultSupportedIPs()) {
                             if (args[1].equalsIgnoreCase(defaultIP)) {
-                                sender.sendMessage("\u00a7cYou cannot remove default config IPs!");
+                                commandSender.sendMessage("\u00a7cYou cannot remove default config IPs!");
                                 return;
                             }
                         }
@@ -89,10 +92,10 @@ public class MentionCommand {
                         }
                     }
 
-                    sender.sendMessage(removed ? "\u00a7aSuccessfully removed IP from config!" : "\u00a7cCould not find an IP with that name to remove!");
+                    commandSender.sendMessage(removed ? "\u00a7aSuccessfully removed IP from config!" : "\u00a7cCould not find an IP with that name to remove!");
                     configChanged = removed;
                 } else {
-                    sender.sendMessage(INVALID_COMMAND_USAGE);
+                    commandSender.sendMessage(INVALID_COMMAND_USAGE);
                 }
 
                 break;
@@ -102,30 +105,30 @@ public class MentionCommand {
                     final String serverIP = args[2].toLowerCase();
 
                     if (splitTypes.get(splitType) != null) {
-                        if (serverIP.isEmpty()) { sender.sendMessage("\u00a7cInvalid IP given!"); return; }
+                        if (serverIP.isEmpty()) { commandSender.sendMessage("\u00a7cInvalid IP given!"); return; }
 
                         for (Map.Entry<String, List<String>> entry : splitTypes.entrySet()) {
                             for (String listIP : entry.getValue()) {
                                 if (serverIP.endsWith(listIP)) {
-                                    sender.sendMessage("\u00a7cA split type for that IP already exists! (" + entry.getKey() + ")");
+                                    commandSender.sendMessage("\u00a7cA split type for that IP already exists! (" + entry.getKey() + ")");
                                     return;
                                 }
                             }
                         }
 
                         splitTypes.get(splitType).add(serverIP);
-                        sender.sendMessage("\u00a7aSuccessfully added IP to config!");
+                        commandSender.sendMessage("\u00a7aSuccessfully added IP to config!");
                         configChanged = true;
                     } else {
-                        sender.sendMessage("\u00a7cInvalid split type given!");
+                        commandSender.sendMessage("\u00a7cInvalid split type given!");
                     }
                 } else {
-                    sender.sendMessage(INVALID_COMMAND_USAGE);
+                    commandSender.sendMessage(INVALID_COMMAND_USAGE);
                 }
 
                 break;
             default:
-                sender.sendMessage(INVALID_COMMAND_USAGE);
+                commandSender.sendMessage(INVALID_COMMAND_USAGE);
         }
 
         if (configChanged) {
