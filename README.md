@@ -3,6 +3,7 @@ A LabyMod addon which highlights your name in chat when a player says your usern
 
 ## Commands
 This addon currently provides 3 commands, which are:
+- /mention
 - /mention list
 - /mention add (split_type) (ip)
 - /mention remove (ip)
