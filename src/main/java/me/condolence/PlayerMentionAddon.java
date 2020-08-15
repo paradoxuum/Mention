@@ -42,7 +42,9 @@ public class PlayerMentionAddon extends LabyModAddon {
         try {
             ForgeCommandRegistry.registerMentionCommand();
             isOnForge = true;
-        } catch (Exception e) { isOnForge = false; }
+        } catch (NoClassDefFoundError e) {
+            isOnForge = false;
+        }
     }
 
     @Override
