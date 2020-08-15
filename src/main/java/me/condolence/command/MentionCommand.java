@@ -1,5 +1,6 @@
 package me.condolence.command;
 
+import com.mojang.authlib.GameProfile;
 import me.condolence.PlayerMentionAddon;
 import me.condolence.config.ConfigHandler;
 import me.condolence.text.SplitType;
@@ -135,5 +136,13 @@ public class MentionCommand {
             configHandler.saveConfig();
             configHandler.loadConfig();
         }
+    }
+
+    public List<String> getTabCompletionOptions(GameProfile sender, String[] args) {
+        if (args.length == 1) {
+            return TabComplete.getMatching(args, Arrays.asList("add", "list", "remove"));
+        }
+
+        return new ArrayList<>();
     }
 }
