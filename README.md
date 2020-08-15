@@ -2,7 +2,7 @@
 A LabyMod addon which highlights your name in chat when a player says your username.
 
 ## Commands
-This addon currently provides 3 commands, which are:
+This addon currently provides 4 commands, which are:
 - /mention
 - /mention list
 - /mention add (split_type) (ip)
