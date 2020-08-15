@@ -1,12 +1,13 @@
 package me.condolence.command;
 
+import me.condolence.PlayerMentionAddon;
 import net.labymod.api.LabyModAPI;
 
 public class CommandSender {
     private final LabyModAPI API;
 
-    public CommandSender(LabyModAPI API) {
-        this.API = API;
+    public CommandSender() {
+        this.API = PlayerMentionAddon.getLabyAPI();
     }
 
     public String getName() {
