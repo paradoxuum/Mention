@@ -5,6 +5,7 @@ import me.condolence.config.settings.HighlightingConfig;
 import me.condolence.config.settings.MainConfig;
 import me.condolence.config.settings.SoundConfig;
 import me.condolence.text.TextColor;
+import net.labymod.api.LabyModAPI;
 import net.labymod.api.LabyModAddon;
 import net.labymod.gui.elements.DropDownMenu;
 import net.labymod.settings.elements.*;
@@ -12,15 +13,19 @@ import net.labymod.utils.Material;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class PlayerMentionAddon extends LabyModAddon {
     // Using gson for a far more organised config file that's not just limited to a single JsonObject
     private static final ConfigHandler configHandler = new ConfigHandler();
+    private static LabyModAPI API;
 
     @Override
     public void onEnable() {
+        API = getApi();
+
         // Instantiate listener and register events
-        Listener listener = new Listener(this);
+        Listener listener = new Listener();
         listener.registerEvents();
     }
 
@@ -157,4 +162,6 @@ public class PlayerMentionAddon extends LabyModAddon {
     }
 
     public static ConfigHandler getConfigHandler() { return configHandler; }
+
+    public static LabyModAPI getLabyAPI() { return API; }
 }
