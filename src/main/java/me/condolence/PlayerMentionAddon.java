@@ -37,6 +37,8 @@ public class PlayerMentionAddon extends LabyModAddon {
     @Override
     public void init(String addonName, UUID uuid) {
         super.init(addonName, uuid);
+
+        // Check if client is forge & register forge command (allows tab completion support)
         try {
             ForgeCommandRegistry.registerMentionCommand();
             isOnForge = true;
