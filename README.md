@@ -8,6 +8,12 @@ This addon currently provides 4 commands, which are:
 - /mention add (split_type) (ip)
 - /mention remove (ip)
 
+The available split types or "chat separators" include:
+- colon
+- double_right_arrow
+
+The above is subject to change and new split types are likely to be added in the future.
+
 ## How it works
 Unfortunately there is no universal way of splitting the sender of a chat message from the message itself on the 
 client-side with the current events that LabyMod provides. In theory, it could be possible with regex, 
