@@ -1,7 +1,7 @@
 package me.condolence.text;
 
 public enum SplitType {
-    DOUBLE_RIGHT_ARROW("double_right_arrow", "\u00bb", new String[]{"hive.sexy", "hivemc.eu", "hivemc.us", "j2o.xyz"}),
+    DOUBLE_RIGHT_ARROW("double_right_arrow", "»", new String[]{"hive.sexy", "hivemc.eu", "hivemc.us", "j2o.xyz"}),
     COLON("colon", ":", new String[]{"hypixel.net", "roxbot.com", "gommehd.net"});
 
     private final String typeName;

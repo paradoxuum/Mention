@@ -1,10 +1,10 @@
 package me.condolence.text;
 
 public enum TextStyle {
-    BOLD("bold", true,"\u00a7l"),
-    ITALIC("italic", false,"\u00a7o"),
-    UNDERLINE( "underline", false,"\u00a7n"),
-    STRIKETHROUGH("strikethrough", false,"\u00a7m");
+    BOLD("bold", true,"§l"),
+    ITALIC("italic", false,"§o"),
+    UNDERLINE( "underline", false,"§n"),
+    STRIKETHROUGH("strikethrough", false,"§m");
 
     private final String styleName;
     private final boolean defaultValue;

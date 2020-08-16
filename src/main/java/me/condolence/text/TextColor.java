@@ -1,22 +1,22 @@
 package me.condolence.text;
 
 public enum TextColor {
-    DARK_RED("\u00a74"),
-    RED("\u00a7c"),
-    GOLD("\u00a76"),
-    YELLOW("\u00a7e"),
-    DARK_GREEN("\u00a72"),
-    GREEN("\u00a7a"),
-    AQUA("\u00a7b"),
-    DARK_AQUA("\u00a73"),
-    DARK_BLUE("\u00a71"),
-    BLUE("\u00a79"),
-    PURPLE("\u00a7d"),
-    DARK_PURPLE("\u00a75"),
-    WHITE("\u00a7f"),
-    GRAY("\u00a77"),
-    DARK_GRAY("\u00a78"),
-    BLACK("\u00a70");
+    DARK_RED("§4"),
+    RED("§c"),
+    GOLD("§6"),
+    YELLOW("§e"),
+    DARK_GREEN("§2"),
+    GREEN("§a"),
+    AQUA("§b"),
+    DARK_AQUA("§3"),
+    DARK_BLUE("§1"),
+    BLUE("§9"),
+    PURPLE("§d"),
+    DARK_PURPLE("§5"),
+    WHITE("§f"),
+    GRAY("§7"),
+    DARK_GRAY("§8"),
+    BLACK("§0");
 
 
     private final String colorCode;
