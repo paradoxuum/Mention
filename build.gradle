@@ -27,6 +27,8 @@ archivesBaseName = "Mention"
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
+compileJava.options.encoding = 'UTF-8'
+
 minecraft {
     version = "1.8.9-11.15.1.1855"
     runDir = "run"
