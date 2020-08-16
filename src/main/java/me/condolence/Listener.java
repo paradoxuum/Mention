@@ -33,7 +33,7 @@ public class Listener {
     private String currentSplitTypeSymbol;
 
     private final Pattern commandPattern = Pattern.compile("(?:/(?<c>\\w+)) ?(?<a>.*)?");
-    private final Pattern formatPattern = Pattern.compile("\u00a7[\\dabcdefklmnor]", Pattern.DOTALL);
+    private final Pattern formatPattern = Pattern.compile("§[\\dabcdefklmnor]", Pattern.DOTALL);
 
     public Listener() { mentionCommand = new MentionCommand(); }
 
@@ -111,7 +111,6 @@ public class Listener {
 
         // MessageSend/MessageModify Events
         eventManager.register((MessageSendEvent) message -> {
-            Debug.log("FORGE: " + PlayerMentionAddon.isOnForge());
             // Forge's command registry will handle this instead if the client is a forge client
             if (PlayerMentionAddon.isOnForge()) { return false; }
 
@@ -258,7 +257,7 @@ public class Listener {
                 int startingIndex = currentIndex + (i * (nameFormattingCode.length() + 2));
 
                 messageStringBuilder.insert(startingIndex, nameFormattingCode);
-                messageStringBuilder.insert(startingIndex + nameFormattingCode.length() + playerUsername.length(), "\u00a7r");
+                messageStringBuilder.insert(startingIndex + nameFormattingCode.length() + playerUsername.length(), "§r");
             }
 
             // Create new chat component with the new formatting codes added for any occurrence of the player's username
