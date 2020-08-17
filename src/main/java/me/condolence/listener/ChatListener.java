@@ -1,12 +1,13 @@
-package me.condolence;
+package me.condolence.listener;
 
-import me.condolence.command.CommandSender;
+import me.condolence.util.Debug;
+import me.condolence.PlayerMentionAddon;
 import me.condolence.command.MentionCommand;
 import me.condolence.config.ConfigHandler;
 import me.condolence.config.settings.HighlightingConfig;
 import me.condolence.config.settings.MainConfig;
 import me.condolence.config.settings.SoundConfig;
-import me.condolence.text.SplitType;
+import me.condolence.util.EnumUtil;
 import me.condolence.text.TextColor;
 import me.condolence.text.TextStyle;
 import net.labymod.api.EventManager;
@@ -18,27 +19,16 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IChatComponent;
 
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
-public class Listener {
-    private final LabyModAPI labyModAPI = PlayerMentionAddon.getLabyAPI();
-    private final ConfigHandler configHandler  = PlayerMentionAddon.getConfigHandler();
+public class ChatListener {
+    private static final MentionCommand mentionCommand = new MentionCommand();
+    private static final Pattern formatPattern = Pattern.compile("§[\\dabcdefklmnor]", Pattern.DOTALL);
 
-    private final MentionCommand mentionCommand;
-
-    // Chat patterns
-    private String currentServerIP;
-    private String currentSplitTypeSymbol;
-
-    private final Pattern commandPattern = Pattern.compile("(?:/(?<c>\\w+)) ?(?<a>.*)?");
-    private final Pattern formatPattern = Pattern.compile("§[\\dabcdefklmnor]", Pattern.DOTALL);
-
-    public Listener() { mentionCommand = new MentionCommand(); }
-
-    // Method to get all occurrences of a given word/string in a string
-    private List<Integer> findWord(String textString, String word) {
+    private static List<Integer> findWordOccurrences(String textString, String word) {
         List<Integer> indexes = new ArrayList<>();
 
         String lowerCaseTextString = textString.toLowerCase();
@@ -56,105 +46,31 @@ public class Listener {
         return indexes;
     }
 
-    private <T extends Enum<?>> T getEnum(Class<T> enumeration, String constantName) {
-        for (T each : enumeration.getEnumConstants()) {
-            if (each.name().compareToIgnoreCase(constantName) == 0) {
-                return each;
-            }
-        }
+    public static void init() {
+        LabyModAPI labyModAPI = PlayerMentionAddon.getLabyAPI();
+        EventManager eventManager = labyModAPI.getEventManager();
+        ConfigHandler configHandler = PlayerMentionAddon.getConfigHandler();
 
-        return null;
-    }
+        if (!PlayerMentionAddon.isOnForge()) {
+            eventManager.register((MessageSendEvent) message -> {
+                if (!message.startsWith("/")) { return false; }
+                message = message.trim().substring(1);
+                String[] splitMessage = message.split(" ");
+                String[] args = new String[splitMessage.length - 1];
+                String commandName = splitMessage[0];
+                System.arraycopy(splitMessage, 1, args, 0, args.length);
 
-    // Method to register LabyMod events
-    public void registerEvents() {
-        final EventManager eventManager = labyModAPI.getEventManager();
-        Debug.log("Registering events...");
+                if (!commandName.equals("mention")) { return false; }
 
-        // Server Join/Quit events
-        eventManager.registerOnJoin(serverData -> {
-            if(configHandler.getMainConfig() == null) { return; }
-
-            // Get server IP
-            final String serverIP = serverData.getIp().toLowerCase();
-            currentServerIP = serverIP;
-
-            // Get split types (key) and the accepted server IPs for each type (value)
-            HashMap<String, List<String>> splitTypeMap = configHandler.getMainConfig().getSplitTypes();
-
-            for (Map.Entry<String, List<String>> entry : splitTypeMap.entrySet()) {
-                // Get split type & accepted IPs
-                SplitType splitType = getEnum(SplitType.class, entry.getKey());
-                List<String> acceptedIPs = entry.getValue();
-
-                // Check that the current server IP ends with the accepted server IP instead of checking if it equals it.
-                // This means that servers like Hypixel or The Hive which allow you to set a custom IP (e.g. AnyTextHere.hypixel.net) are supported.
-                for (String acceptedIP : acceptedIPs) {
-                    if (serverIP.endsWith(acceptedIP.toLowerCase())) {
-                        if (splitType != null) {
-                            currentSplitTypeSymbol = splitType.getSplitSymbol();
-                            Debug.log("Found split type '" + splitType.getTypeName() + "' for server '" + serverIP + "'!");
-                        } else {
-                            Debug.log("Could not get SplitType enum for: " + entry.getKey());
-                        }
-
-                        break;
-                    }
+                try {
+                    mentionCommand.processCommand(Minecraft.getMinecraft().thePlayer, args);
+                } catch (Exception e) {
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("§cAn error occurred attempting to perform this command."));
                 }
-            }
-        });
-
-        eventManager.registerOnQuit(serverData -> {
-            currentServerIP = null;
-            currentSplitTypeSymbol = null;
-        });
-
-        // MessageSend/MessageModify Events
-        eventManager.register((MessageSendEvent) message -> {
-            // Forge's command registry will handle this instead if the client is a forge client
-            if (PlayerMentionAddon.isOnForge()) { return false; }
-
-            // Check if config exists and that the addon is enabled
-            if(configHandler.getMainConfig() == null) { return false; }
-            if(!configHandler.getMainConfig().isEnabled()) { return false; }
-
-            Matcher matcher = commandPattern.matcher(message);
-            if (!(matcher.matches())) { return false; }
-
-            String commandName;
-            String commandArgString;
-
-            try {
-                commandName = message.substring(matcher.start("c"), matcher.end("c"));
-                commandArgString = message.substring(matcher.start("a"), matcher.end("a"));
-            } catch (StringIndexOutOfBoundsException e) {
-                return false;
-            }
-
-            if (!(commandName.isEmpty())) {
-                // Trim string and replace 2 or more spaces with a single space
-                commandArgString = commandArgString.trim().replaceAll(" +", " ");
-
-                // Split arg string at every space or create empty string array if no args were given
-                String[] commandArgs = !(commandArgString.isEmpty()) ? commandArgString.split(" ") : new String[]{};
-
-                boolean commandFound = false;
-                for (String alias : mentionCommand.getAliases()) {
-                    if (commandName.equalsIgnoreCase(alias)) {
-                        commandFound = true;
-                        break;
-                    }
-                }
-
-                if (!commandFound) { return false; }
-
-                mentionCommand.processCommand(commandArgs);
 
                 return true;
-            }
-
-            return false;
-        });
+            });
+        }
 
         eventManager.register((MessageModifyChatEvent) o -> {
             // If the config didn't load properly then return the object - otherwise the game would crash due to a NullPointerException
@@ -163,6 +79,10 @@ public class Listener {
             // If the addon isn't enabled then nothing should be done
             if (!configHandler.getMainConfig().isEnabled()) { return o; }
             if (!(o instanceof IChatComponent)) { return o; }
+
+            // Get split symbol
+            final String splitSymbol = ServerListener.getCurrentSplitSymbol();
+            if ((splitSymbol == null) && (ServerListener.getCurrentServerIP() != null)) { return o; }
 
             // Cast object to IChatComponent
             final IChatComponent component = (IChatComponent) o;
@@ -188,9 +108,9 @@ public class Listener {
             // If debug mode is enabled, but the player wasn't mentioned, split the message and then return the chat object.
             if (!(unformattedText.contains(playerUsername)) && !debugMode) { return o; }
 
-            // Get sender & message using String.split() - I've used regex for this previously but I've found splitting the string is more readable and (should be) more performant.
+            // Get sender & message using String.split()
             // Use ">" for singleplayer - the chat format should be "<Username> Message"
-            String[] splitMessage = unformattedText.split((currentServerIP == null) ? ">" : currentSplitTypeSymbol, 2);
+            String[] splitMessage = unformattedText.split((splitSymbol == null) ? ">" : splitSymbol, 2);
             if (splitMessage.length <= 1) { return o; }
 
             String sender = splitMessage[0].trim();
@@ -218,7 +138,7 @@ public class Listener {
             final String formattedTextMatchCase = component.getFormattedText();
 
             // Get the indexes of every instance of the player's name in the chat message
-            List<Integer> matchingIndexes = findWord(formattedText.substring(chatMessageIndex), playerUsername);
+            List<Integer> matchingIndexes = findWordOccurrences(formattedText.substring(chatMessageIndex), playerUsername);
 
             // If no occurrences of the player's name was found, return the chat message object (they were not mentioned)
             // This should not happen, but there should be a check for it anyway to avoid any errors being thrown below, or an empty chat message being returned
@@ -234,7 +154,7 @@ public class Listener {
 
             for (Map.Entry<String, Boolean> entry : mainConfig.getHighlightConfig().getStyles().entrySet()) {
                 if (entry.getValue()) {
-                    TextStyle textStyle = getEnum(TextStyle.class, entry.getKey());
+                    TextStyle textStyle = EnumUtil.getEnumFromName(TextStyle.class, entry.getKey());
 
                     if (textStyle != null) {
                         formattingStringBuilder.append(textStyle.getFormattingCode());

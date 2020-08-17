@@ -1,11 +1,12 @@
 package me.condolence;
 
-import me.condolence.command.ForgeCommandRegistry;
 import me.condolence.command.MentionCommand;
 import me.condolence.config.ConfigHandler;
 import me.condolence.config.settings.HighlightingConfig;
 import me.condolence.config.settings.MainConfig;
 import me.condolence.config.settings.SoundConfig;
+import me.condolence.listener.ChatListener;
+import me.condolence.listener.ServerListener;
 import me.condolence.text.TextColor;
 import net.labymod.api.LabyModAPI;
 import net.labymod.api.LabyModAddon;
@@ -15,36 +16,27 @@ import net.labymod.utils.Material;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
 public class PlayerMentionAddon extends LabyModAddon {
     // Using gson for a far more organised config file that's not just limited to a single JsonObject
     private static final ConfigHandler configHandler = new ConfigHandler();
     private static LabyModAPI API;
-    private static MentionCommand mentionCommand;
     private static boolean isOnForge;
 
     @Override
     public void onEnable() {
         API = getApi();
-        mentionCommand = new MentionCommand();
 
-        // Instantiate listener and register events
-        Listener listener = new Listener();
-        listener.registerEvents();
-    }
-
-    @Override
-    public void init(String addonName, UUID uuid) {
-        super.init(addonName, uuid);
-
-        // Check if client is forge & register forge command (allows tab completion support)
         try {
-            ForgeCommandRegistry.registerMentionCommand();
+            net.minecraftforge.client.ClientCommandHandler.instance.registerCommand(new MentionCommand());
             isOnForge = true;
         } catch (NoClassDefFoundError e) {
             isOnForge = false;
         }
+
+        // Register listener events
+        ChatListener.init();
+        ServerListener.init();
     }
 
     @Override
@@ -182,8 +174,6 @@ public class PlayerMentionAddon extends LabyModAddon {
     public static ConfigHandler getConfigHandler() { return configHandler; }
 
     public static LabyModAPI getLabyAPI() { return API; }
-
-    public static MentionCommand getMentionCommand() { return mentionCommand; }
 
     public static boolean isOnForge() { return isOnForge; }
 }

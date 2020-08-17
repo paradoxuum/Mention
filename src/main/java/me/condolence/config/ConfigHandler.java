@@ -2,7 +2,7 @@ package me.condolence.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import me.condolence.Debug;
+import me.condolence.util.Debug;
 import me.condolence.config.settings.MainConfig;
 import net.labymod.addon.AddonLoader;
 import org.apache.commons.io.IOUtils;

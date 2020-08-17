@@ -1,45 +1,55 @@
 package me.condolence.command;
 
-import com.mojang.authlib.GameProfile;
 import me.condolence.PlayerMentionAddon;
 import me.condolence.config.ConfigHandler;
+import me.condolence.listener.ServerListener;
 import me.condolence.text.SplitType;
+import net.minecraft.command.CommandBase;
+import net.minecraft.command.ICommandSender;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.ChatComponentText;
 
 import java.util.*;
 
-public class MentionCommand {
+public class MentionCommand extends CommandBase {
     final String commandUsage;
     final ConfigHandler configHandler = PlayerMentionAddon.getConfigHandler();
-    final CommandSender commandSender;
+    final ArrayList<String> availableSplitTypes = new ArrayList<>();
 
     public MentionCommand() {
         // Add all split type options to be used in the command usage string
         // Over-engineered? Probably. I'm able to add more split types in the future without having to change this, at least.
-        StringBuilder splitTypesBuilder = new StringBuilder("Split Options:\n§9");
+        StringBuilder splitTypesBuilder = new StringBuilder("§3Split Options:\n");
         for (SplitType type : SplitType.values()) {
             splitTypesBuilder
-                    .append("   ")
+                    .append("   §9")
                     .append(type.getTypeName())
                     .append(" (")
                     .append(type.getSplitSymbol())
                     .append(")\n");
+
+            availableSplitTypes.add(type.getTypeName());
         }
 
         // Build command usage string
-        commandUsage = "§b§lMention Addon Usage:§r\n" +
-                "   §r§9/mention add <split_type> <ip>\n" +
-                "   /mention remove <ip>\n" +
-                "§3The IP argument should be the IP of a server\n\n" +
+        commandUsage = "\n§b§lMention Addon Usage:\n" +
+                "   §9/mention add <ip> <split_type>\n" +
+                "   §9/mention remove <ip>\n" +
+                "§3The IP argument should be the IP of a server\n" +
                 splitTypesBuilder.toString();
-
-        commandSender = new CommandSender();
     }
 
-    public List<String> getAliases() {
-        return Arrays.asList("mention", "mention_addon");
-    }
+    @Override
+    public String getCommandName() { return "mention"; }
 
-    public void processCommand(String[] args) {
+    @Override
+    public String getCommandUsage(ICommandSender sender) { return ""; }
+
+    @Override
+    public boolean canCommandSenderUseCommand(ICommandSender sender) { return true; }
+
+    @Override
+    public void processCommand(ICommandSender sender, String[] args) {
         final String INVALID_COMMAND_USAGE = "§cInvalid command usage! Use /mention to list all commands.";
         final HashMap<String, List<String>> splitTypes = configHandler.getMainConfig().getSplitTypes();
 
@@ -47,34 +57,46 @@ public class MentionCommand {
 
         switch(args.length) {
             case 0:
-                commandSender.sendMessage(commandUsage);
-                
+                sender.addChatMessage(new ChatComponentText(commandUsage));
+
                 break;
             case 1:
                 if (args[0].equalsIgnoreCase("list")) {
-                    StringBuilder listStringBuilder = new StringBuilder("§b§lSplit Types:§r\n");
+                    StringBuilder listStringBuilder = new StringBuilder("\n§b§lSplit Types:§r\n");
 
                     for (Map.Entry<String, List<String>> entry : splitTypes.entrySet()) {
                         listStringBuilder
                                 .append("§9")
                                 .append(entry.getKey())
                                 .append(": §3")
-                                .append(String.join(", ", entry.getValue()))
+                                .append((entry.getValue().size() > 0) ? String.join(", ", entry.getValue()) : "NONE")
                                 .append("§r\n");
                     }
 
-                    commandSender.sendMessage(listStringBuilder.toString());
+                    sender.addChatMessage(new ChatComponentText(listStringBuilder.toString()));
                 } else {
-                    commandSender.sendMessage(INVALID_COMMAND_USAGE);
+                    sender.addChatMessage(new ChatComponentText(INVALID_COMMAND_USAGE));
                 }
 
                 break;
             case 2:
                 if (args[0].equalsIgnoreCase("remove")) {
+                    String serverIP = args[1].toLowerCase();
+                    final String currentServerIP = ServerListener.getCurrentServerIP();
+
+                    if (serverIP.equals("current")) {
+                        serverIP = currentServerIP;
+                        if (serverIP == null) {
+                            sender.addChatMessage(new ChatComponentText("§cCould not set split type for current server! (Player is in singleplayer)"));
+                            return;
+                        }
+                    }
+
                     for (SplitType type : SplitType.values()) {
                         for (String defaultIP : type.getDefaultSupportedIPs()) {
-                            if (args[1].equalsIgnoreCase(defaultIP)) {
-                                commandSender.sendMessage("§cYou cannot remove default config IPs!");
+                            if (serverIP.equals(defaultIP)) {
+                                sender.addChatMessage(new ChatComponentText("§cYou cannot remove default config IPs!"));
+
                                 return;
                             }
                         }
@@ -85,7 +107,7 @@ public class MentionCommand {
                         Iterator<String> iterator = entrySet.getValue().iterator();
 
                         while (iterator.hasNext()) {
-                            if (args[1].equalsIgnoreCase(iterator.next().toLowerCase())) {
+                            if (serverIP.equals(iterator.next().toLowerCase())) {
                                 iterator.remove();
                                 removed = true;
                                 break;
@@ -93,43 +115,68 @@ public class MentionCommand {
                         }
                     }
 
-                    commandSender.sendMessage(removed ? "§aSuccessfully removed IP from config!" : "§cCould not find an IP with that name to remove!");
+                    sender.addChatMessage(new ChatComponentText(removed ? "§aSuccessfully removed IP from config!" : "§cCould not find an IP with that name to remove!"));
                     configChanged = removed;
+
+                    if (removed && ((currentServerIP != null) && (currentServerIP.equals(serverIP)))) {
+                        ServerListener.setSplitType();
+                        sender.addChatMessage(new ChatComponentText("§aUnset split type for current server!"));
+                    }
                 } else {
-                    commandSender.sendMessage(INVALID_COMMAND_USAGE);
+                    sender.addChatMessage(new ChatComponentText(INVALID_COMMAND_USAGE));
                 }
 
                 break;
             case 3:
                 if (args[0].equalsIgnoreCase("add")) {
-                    final String splitType = args[1].toLowerCase();
-                    final String serverIP = args[2].toLowerCase();
+                    String serverIP = args[1].toLowerCase();
+                    final String splitType = args[2].toLowerCase();
+
 
                     if (splitTypes.get(splitType) != null) {
-                        if (serverIP.isEmpty()) { commandSender.sendMessage("§cInvalid IP given!"); return; }
+                        if (serverIP.isEmpty()) {
+                            sender.addChatMessage(new ChatComponentText("§cInvalid IP given!"));
+                            return;
+                        }
+
+                        String currentServerIP = ServerListener.getCurrentServerIP();
+
+                        if (serverIP.equals("current")) {
+                            serverIP = currentServerIP;
+                            if (serverIP == null) {
+                                sender.addChatMessage(new ChatComponentText("§cCould not set split type for current server! (Player is in singleplayer)"));
+                                return;
+                            }
+                        }
 
                         for (Map.Entry<String, List<String>> entry : splitTypes.entrySet()) {
                             for (String listIP : entry.getValue()) {
                                 if (serverIP.endsWith(listIP)) {
-                                    commandSender.sendMessage("§cA split type for that IP already exists! (" + entry.getKey() + ")");
+                                    sender.addChatMessage(new ChatComponentText("§cA split type for that IP already exists! (" + entry.getKey() + ")"));
                                     return;
                                 }
                             }
                         }
 
                         splitTypes.get(splitType).add(serverIP);
-                        commandSender.sendMessage("§aSuccessfully added IP to config!");
+                        sender.addChatMessage(new ChatComponentText("§aSuccessfully added IP to config!"));
+
+                        if ((currentServerIP != null) && (currentServerIP.equals(serverIP))) {
+                            ServerListener.setSplitType(splitType);
+                            sender.addChatMessage(new ChatComponentText("§aSet split type for current server to " + splitType + "!"));
+                        }
+
                         configChanged = true;
                     } else {
-                        commandSender.sendMessage("§cInvalid split type given!");
+                        sender.addChatMessage(new ChatComponentText("§cInvalid split type given!"));
                     }
                 } else {
-                    commandSender.sendMessage(INVALID_COMMAND_USAGE);
+                    sender.addChatMessage(new ChatComponentText(INVALID_COMMAND_USAGE));
                 }
 
                 break;
             default:
-                commandSender.sendMessage(INVALID_COMMAND_USAGE);
+                sender.addChatMessage(new ChatComponentText(INVALID_COMMAND_USAGE));
         }
 
         if (configChanged) {
@@ -138,11 +185,24 @@ public class MentionCommand {
         }
     }
 
-    public List<String> getTabCompletionOptions(GameProfile sender, String[] args) {
+    @Override
+    public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
         if (args.length == 1) {
-            return TabComplete.getMatching(args, Arrays.asList("add", "list", "remove"));
+            return getListOfStringsMatchingLastWord(args, "list", "add", "remove");
         }
 
-        return new ArrayList<>();
+        if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("remove")) {
+                return getListOfStringsMatchingLastWord(args, "current");
+            }
+        }
+
+        if (args.length == 3) {
+            if (args[0].equalsIgnoreCase("add")) {
+                return getListOfStringsMatchingLastWord(args, availableSplitTypes);
+            }
+        }
+
+        return null;
     }
 }
