@@ -9,7 +9,7 @@ when your name is mentioned, and the volume and the sound itself that plays ("no
 This addon currently provides 4 commands, which are:
 - /mention
 - /mention list
-- /mention add (split_type) (ip)
+- /mention add (ip) (split_type)
 - /mention remove (ip)
 
 The available split types or "chat separators" include:
