@@ -176,4 +176,8 @@ public class PlayerMentionAddon extends LabyModAddon {
     public static LabyModAPI getLabyAPI() { return API; }
 
     public static boolean isOnForge() { return isOnForge; }
+
+    public static String getVersion() {
+        return "1.0";
+    }
 }

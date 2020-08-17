@@ -2,6 +2,9 @@ package me.condolence.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import me.condolence.PlayerMentionAddon;
 import me.condolence.util.Debug;
 import me.condolence.config.settings.MainConfig;
 import net.labymod.addon.AddonLoader;
@@ -62,8 +65,26 @@ public class ConfigHandler {
 
         // Get config class from json and store as a field or create a new instance of the MainConfig class if the file did not exist previously
         try {
-            mainConfig = gson.fromJson(fileCreated ? gson.toJson(MainConfig.class.newInstance()) : IOUtils.toString(inputStream, StandardCharsets.UTF_8), MainConfig.class);
-            if (fileCreated && (mainConfig != null)) { saveConfig(); }
+            boolean updateConfig = fileCreated;
+
+            if (fileCreated) {
+                mainConfig = gson.fromJson(gson.toJson(MainConfig.class.newInstance()), MainConfig.class);
+            } else {
+                String jsonString = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+                JsonElement configJsonElement = gson.fromJson(jsonString, JsonElement.class);
+                JsonObject configJsonObject = configJsonElement.getAsJsonObject();
+                String configVersion = configJsonObject.has("version") ? configJsonObject.get("version").getAsString() : "-1";
+
+                if (configVersion.equals(PlayerMentionAddon.getVersion())) {
+                    mainConfig = gson.fromJson(jsonString, MainConfig.class);
+                } else {
+                    mainConfig = gson.fromJson(gson.toJson(MainConfig.class.newInstance()), MainConfig.class);
+                    updateConfig = true;
+                    Debug.log("Config version does not equal addon version! Updating (and resetting) config...");
+                }
+            }
+
+            if (updateConfig && (mainConfig != null)) { saveConfig(); }
         } catch (Exception e) {
             Debug.log("Failed to load settings!");
             e.printStackTrace();
